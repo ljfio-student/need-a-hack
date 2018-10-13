@@ -8,15 +8,20 @@ const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     let query = encodeURIComponent(webhook_event.message.text);
-    let url = "https://devpost.com/software/search?query=" + query + "&per_page=4";
+    let devpost_url = "https://devpost.com/software/search?query=" + query + "&per_page=4";
+
+    Client.sendSenderAction(webhook_event.sender, "mark_seen");
+    Client.sendSenderAction(webhook_event.sender, "typing_on");
 
     request({
-        url: url,
+        url: devpost_url,
         json: true,
     }, (error, response, data) => {
         if (error) {
             console.error(error);
             Client.sendText(webhook_event.sender, "Sorry bro, couldn't find anything");
+            Client.sendSenderAction(webhook_event.sender, "typing_off");
+            return;
         }
 
         if (data.software && data.software.length > 0) {
@@ -51,5 +56,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                     console.error(e);
                 });
         }
+
+        Client.sendSenderAction(webhook_event.sender, "typing_off");
     });
 });
