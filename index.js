@@ -9,7 +9,7 @@ const Client = new Messenger.Client(config.client);
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     let query = encodeURIComponent(webhook_event.message.text);
 
-    let devpost_url = "https://devpost.com/software/search?query=" + query + "&per_page=4";
+    let devpost_url = "https://devpost.com/software/search?query=" + query + "%20is%3apopular&per_page=4";
 
     Client.sendSenderAction(webhook_event.sender, "mark_seen");
     Client.sendSenderAction(webhook_event.sender, "typing_on");
