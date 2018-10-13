@@ -7,14 +7,13 @@ const Webhook = new Messenger.Webhook(config.webhook);
 const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
-    console.log(event_type);
-    console.log(sender_info);
-    console.log(webhook_event);
-
     let query = encodeURIComponent(webhook_event.message.text);
-    let url = "https://devpost.com/software/search?query=" + query + "&per_page=5";
+    let url = "https://devpost.com/software/search?query=" + query + "&per_page=4";
 
-    request(url, (error, response, data) => {
+    request({
+        url: url,
+        json: true,
+    }, (error, response, data) => {
         if (error) {
             console.error(error);
             Client.sendText(webhook_event.sender, "Sorry bro, couldn't find anything");
@@ -28,10 +27,10 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                     title: software.name,
                     subtitle: software.tagline,
                     default_action: {
-                      type: "web_url",
-                      url: software.url,
-                      messenger_extensions: false,
-                      webview_height_ratio: "tall"
+                        type: "web_url",
+                        url: software.url,
+                        messenger_extensions: false,
+                        webview_height_ratio: "tall"
                     }
                 };
 
@@ -40,12 +39,16 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 
             let template = {
                 template_type: "list",
+                top_element_style: "compact",
                 elements: list,
             };
 
             Client.sendTemplate(webhook_event.sender, template)
                 .then(res => {
-                    console.log('sent');
+                    console.log(res);
+                })
+                .catch(e => {
+                    console.error(e);
                 });
         }
     });
