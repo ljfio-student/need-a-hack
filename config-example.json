@@ -1,0 +1,13 @@
+{
+    "webhook" : {
+        "verify_token": "",
+        "port": "",
+        "endpoint": "",
+        "app_secret": ""
+    },
+    "client": {
+        "page_token": "",
+        "app_token": "",
+        "api_version": ""
+    }
+}

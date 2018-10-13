@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/ljfio/need-a-hack#readme",
   "dependencies": {
-    "messenger-node": "^0.3.1"
+    "messenger-node": "^0.3.1",
+    "request": "^2.88.0"
   }
 }
