@@ -8,7 +8,7 @@ const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     let query = encodeURIComponent(webhook_event.message.text);
-    let url = "https://devpost.com/software/search?query=" + query + "&per_page=4";
+    let url = "https://devpost.com/software/popular?query=" + query + "&per_page=4";
 
     request({
         url: url,
