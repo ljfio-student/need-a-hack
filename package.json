@@ -1,0 +1,26 @@
+{
+  "name": "need-a-hack",
+  "version": "1.0.0",
+  "description": "Need a hack, we got your back!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ljfio/need-a-hack.git"
+  },
+  "keywords": [
+    "hackathon",
+    "bot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ljfio/need-a-hack/issues"
+  },
+  "homepage": "https://github.com/ljfio/need-a-hack#readme",
+  "dependencies": {
+    "messenger-node": "^0.3.1"
+  }
+}
