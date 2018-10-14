@@ -1,16 +1,84 @@
+const request = require('request');
+
+// MongoDB Database
+const mongodbUrl = 'mongodb://localhost:27017';
+const mongodbDbName = 'need-a-hack';
+const mongodbCollectionName = 'conversations';
+
+const MongoClient = require('mongodb').MongoClient;
+
+const databaseClient = new MongoClient(mongodbUrl);
+let database = null;
+
+databaseClient.connect((err, client) => {
+    if (err) throw err;
+
+    database = client.db(mongodbDbName);
+});
+
+// Facebook Messenger
 const Messenger = require('messenger-node');
 const config = require('./config.json');
-
-const request = require('request');
 
 const Webhook = new Messenger.Webhook(config.webhook);
 const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
-    devpost_url = buildUrl(webhook_event.message.text);
-
     Client.sendSenderAction(webhook_event.sender, "mark_seen");
     Client.sendSenderAction(webhook_event.sender, "typing_on");
+
+    let collection = database.collection(mongodbCollectionName);
+
+    collection.findOne({user: webhook_event.sender.id}, (err, result) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        if (result == null) {
+            result = {
+                user: webhook_event.sender.id,
+                stage: ConversationStage.START,
+            };
+        }
+
+        switch (result.stage) {
+            case ConversationStage.START:
+                Client.sendText(webhook_event.sender, "Do you know what kind of challenges are available?");
+                result.stage = ConversationStage.CHALLENGE;
+                break;
+            case ConversationStage.CHALLENGE:
+                result.challenge = webhook_event.message.text;
+                Client.sendText(webhook_event.sender, "What skills do you have in the team?");
+                result.stage = ConversationStage.TECH;
+                break;
+            case ConversationStage.TECH:
+                result.tech = webhook_event.message.text;
+                queryDevpost(webhook_event.sender, result);
+                result.stage = ConversationStage.FINISH;
+                break;
+        }
+
+        collection.update({user: result.user}, result, {upsert: true}, (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            console.log(result);
+        });
+    });
+});
+
+const ConversationStage = {
+    START: 0,
+    CHALLENGE: 1,
+    TECH: 2,
+    FINISH: 3,
+};
+
+function queryDevpost(sender, convertsation) {
+    devpost_url = buildUrl(convertsation.challenge);
 
     request({
         url: devpost_url,
@@ -18,8 +86,8 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     }, (error, response, data) => {
         if (error) {
             console.error(error);
-            Client.sendText(webhook_event.sender, "Sorry bro, couldn't find anything");
-            Client.sendSenderAction(webhook_event.sender, "typing_off");
+            Client.sendText(sender, "Sorry bro, couldn't find anything");
+            Client.sendSenderAction(sender, "typing_off");
             return;
         }
 
@@ -47,7 +115,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                 elements: list,
             };
 
-            Client.sendTemplate(webhook_event.sender, template)
+            Client.sendTemplate(sender, template)
                 .then(res => {
                     console.log(res);
                 })
@@ -56,9 +124,9 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                 });
         }
 
-        Client.sendSenderAction(webhook_event.sender, "typing_off");
+        Client.sendSenderAction(sender, "typing_off");
     });
-});
+}
 
 function buildUrl(message, type) {
     let options = ['is:popular', 'is:featured', 'is:trending'];
