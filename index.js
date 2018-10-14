@@ -7,9 +7,8 @@ const Webhook = new Messenger.Webhook(config.webhook);
 const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
-    let query = encodeURIComponent(webhook_event.message.text);
 
-    let devpost_url = "https://devpost.com/software/search?query=" + query + "%20is%3apopular&per_page=4";
+    devpost_url = buildUrl(webhook_event.messenge);
 
     Client.sendSenderAction(webhook_event.sender, "mark_seen");
     Client.sendSenderAction(webhook_event.sender, "typing_on");
@@ -61,3 +60,19 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
         Client.sendSenderAction(webhook_event.sender, "typing_off");
     });
 });
+
+function buildUrl ( query ) {
+    let s = webhook_event.message.text.split( ' ' )
+    let o = ""
+
+    for ( i in s ) {
+        o += encodeURIComponent( s[i] )
+        if ( i < s.length - 1 ) o += '+'
+    }
+
+    let query = o
+
+    delete o, s, options
+
+    return "https://devpost.com/software/search?query=" + query + "&per_page=4"
+}
