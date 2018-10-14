@@ -7,8 +7,7 @@ const Webhook = new Messenger.Webhook(config.webhook);
 const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
-
-    devpost_url = buildUrl(webhook_event.messenge);
+    devpost_url = buildUrl(webhook_event.message.text);
 
     Client.sendSenderAction(webhook_event.sender, "mark_seen");
     Client.sendSenderAction(webhook_event.sender, "typing_on");
@@ -61,32 +60,14 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     });
 });
 
-function chooseType( option ) {
-    const options = ['is:popular', 'is:featured', 'is:trending']
-    let o;
+function buildUrl(message, type) {
+    let options = ['is:popular', 'is:featured', 'is:trending'];
 
-    switch( option ){
-        case 1 :
-        case 2 : 
-        case 3 : o = encodeURIComponent( options[option] ) + '+'; break;
-        default : o = '';
-    }
-    
-    return o
-}
+    let components = message.split(' ');
 
-function buildUrl ( query , type) {  
-    let s = webhook_event.message.text.split( ' ' )
-    let o = ""
+    components.unshift(options[type ? type : 0]);
 
-    for ( i in s ) {
-        o += encodeURIComponent( s[i] )
-        if ( i < s.length - 1 ) o += '+'
-    }
+    let combined = components.map(a => encodeURIComponent(a)).join('+');
 
-    let query = chooseType( type ? type : 0 ) + o
-
-    delete o, s
-
-    return "https://devpost.com/software/search?query=" + query + "&per_page=4"
+    return "https://devpost.com/software/search?query=" + combined + "&per_page=4";
 }
