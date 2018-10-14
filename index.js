@@ -54,8 +54,19 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                 break;
             case ConversationStage.TECH:
                 result.tech = webhook_event.message.text;
-                queryDevpost(webhook_event.sender, result);
-                result.stage = ConversationStage.START;
+
+                if (webhook_event.message.quick_reply) {
+                    let reply = webhook_event.message.quick_reply.payload;
+
+                    if (reply == 'QR_YES') {
+                        Client.sendText(webhook_event.sender, 'Great!')
+                    } else if (reply == 'QR_NO') {
+                        Client.sendText(webhook_event.sender, 'Sorry we couldn\'t help');
+                    }
+                } else {
+                    queryDevpost(webhook_event.sender, result);
+                }
+
                 break;
         }
 
@@ -117,12 +128,24 @@ function queryDevpost(sender, convertsation) {
             Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
 
             Client.sendTemplate(sender, template)
-                .then(res => {
-                    console.log(res);
-                })
                 .catch(e => {
                     console.error(e);
                 });
+
+            setTimeout(() => {
+                Client.sendQuickReplies(sender, [
+                    {
+                        content_type:'text',
+                        title:'Yes',
+                        payload:'QR_YES',
+                    },
+                    {
+                        content_type:'text',
+                        title:'No',
+                        payload:'QR_NO',
+                    },
+                ], "Does this meet your requirements?")
+            }, 3000);
         }
 
         Client.sendSenderAction(sender, "typing_off");
