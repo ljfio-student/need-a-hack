@@ -55,7 +55,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
             case ConversationStage.TECH:
                 result.tech = webhook_event.message.text;
                 queryDevpost(webhook_event.sender, result);
-                result.stage = ConversationStage.FINISH;
+                result.stage = ConversationStage.START;
                 break;
         }
 
@@ -74,7 +74,6 @@ const ConversationStage = {
     START: 0,
     CHALLENGE: 1,
     TECH: 2,
-    FINISH: 3,
 };
 
 function queryDevpost(sender, convertsation) {
@@ -114,6 +113,8 @@ function queryDevpost(sender, convertsation) {
                 top_element_style: "compact",
                 elements: list,
             };
+
+            Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
 
             Client.sendTemplate(sender, template)
                 .then(res => {
