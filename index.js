@@ -61,7 +61,21 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     });
 });
 
-function buildUrl ( query ) {
+function chooseType( option ) {
+    const options = ['is:popular', 'is:featured', 'is:trending']
+    let o;
+
+    switch( option ){
+        case 1 :
+        case 2 : 
+        case 3 : o = encodeURIComponent( options[option] ) + '+'; break;
+        default : o = '';
+    }
+    
+    return o
+}
+
+function buildUrl ( query , type) {  
     let s = webhook_event.message.text.split( ' ' )
     let o = ""
 
@@ -70,9 +84,9 @@ function buildUrl ( query ) {
         if ( i < s.length - 1 ) o += '+'
     }
 
-    let query = o
+    let query = chooseType( type ? type : 0 ) + o
 
-    delete o, s, options
+    delete o, s
 
     return "https://devpost.com/software/search?query=" + query + "&per_page=4"
 }
