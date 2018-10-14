@@ -1,4 +1,5 @@
 const request = require('request');
+const {URL, URLSearchParams} = require('url');
 
 // MongoDB Database
 const mongodbUrl = 'mongodb://localhost:27017';
@@ -29,7 +30,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 
     let collection = database.collection(mongodbCollectionName);
 
-    collection.findOne({user: webhook_event.sender.id}, (err, result) => {
+    collection.findOne({ user: webhook_event.sender.id }, (err, result) => {
         if (err) {
             console.error(err);
             return;
@@ -62,6 +63,9 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                         Client.sendText(webhook_event.sender, 'Great!')
                     } else if (reply == 'QR_NO') {
                         Client.sendText(webhook_event.sender, 'Sorry we couldn\'t help');
+                    } else if (reply == 'QR_SHOW_MORE') {
+                        result.page = result.page ? result.page + 1 : 2;
+                        queryDevpost(webhook_event.sender, result);
                     }
                 } else {
                     queryDevpost(webhook_event.sender, result);
@@ -70,7 +74,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                 break;
         }
 
-        collection.update({user: result.user}, result, {upsert: true}, (err) => {
+        collection.update({ user: result.user }, result, { upsert: true }, (err) => {
             if (err) {
                 console.error(err);
                 return;
@@ -88,7 +92,9 @@ const ConversationStage = {
 };
 
 function queryDevpost(sender, convertsation) {
-    devpost_url = buildUrl(convertsation.challenge);
+    let page = convertsation.page ? convertsation.page : null;
+
+    devpost_url = buildUrl(convertsation.challenge, 0, page);
 
     request({
         url: devpost_url,
@@ -123,11 +129,23 @@ function queryDevpost(sender, convertsation) {
                 template_type: "list",
                 top_element_style: "compact",
                 elements: list,
+                buttons: [
+                    {
+                        type: "postback",
+                        title: "Show More",
+                        payload: "QR_SHOW_MORE"
+                    }
+                ]
             };
 
-            Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
+            if (!page) {
+                Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
+            }
 
             Client.sendTemplate(sender, template)
+                .then(res => {
+                    console.log(res);
+                })
                 .catch(e => {
                     console.error(e);
                 });
@@ -135,24 +153,29 @@ function queryDevpost(sender, convertsation) {
             setTimeout(() => {
                 Client.sendQuickReplies(sender, [
                     {
-                        content_type:'text',
-                        title:'Yes',
-                        payload:'QR_YES',
+                        content_type: 'text',
+                        title: 'Yes',
+                        payload: 'QR_YES',
                     },
                     {
-                        content_type:'text',
-                        title:'No',
-                        payload:'QR_NO',
+                        content_type: 'text',
+                        title: 'No',
+                        payload: 'QR_NO',
                     },
+                    {
+                        content_type: 'text',
+                        title: 'Show me more...',
+                        payload: 'QR_SHOW_MORE',
+                    }
                 ], "Does this meet your requirements?")
-            }, 3000);
+            }, 2000);
         }
 
         Client.sendSenderAction(sender, "typing_off");
     });
 }
 
-function buildUrl(message, type) {
+function buildUrl(message, type, page) {
     let options = ['is:popular', 'is:featured', 'is:trending'];
 
     let components = message.split(' ');
@@ -161,5 +184,18 @@ function buildUrl(message, type) {
 
     let combined = components.map(a => encodeURIComponent(a)).join('+');
 
-    return "https://devpost.com/software/search?query=" + combined + "&per_page=4";
+    // Create the HREF
+    let search_url = new URL("https://devpost.com/software/search");
+    let search_params = new URLSearchParams();
+
+    search_params.set('query', combined);
+    search_params.set('per_page', '4');
+
+    if (page) {
+        search_params.set('page', page);
+    }
+
+    search_url.search = search_params;
+
+    return search_url.href;
 }
