@@ -1,5 +1,5 @@
 const request = require('request');
-const {URL, URLSearchParams} = require('url');
+const { URL, URLSearchParams } = require('url');
 
 // MongoDB Database
 const mongodbUrl = 'mongodb://localhost:27017';
@@ -40,6 +40,7 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
             result = {
                 user: webhook_event.sender.id,
                 stage: ConversationStage.START,
+                page: 1,
             };
         }
 
@@ -60,11 +61,15 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
                     let reply = webhook_event.message.quick_reply.payload;
 
                     if (reply == 'QR_YES') {
-                        Client.sendText(webhook_event.sender, 'Great!')
+                        Client.sendText(webhook_event.sender, 'Great, happy hacking!')
+                        result.stage = ConversationStage.START;
+                        result.page = 1;
                     } else if (reply == 'QR_NO') {
                         Client.sendText(webhook_event.sender, 'Sorry we couldn\'t help');
+                        result.stage = ConversationStage.START;
+                        result.page = 1;
                     } else if (reply == 'QR_SHOW_MORE') {
-                        result.page = result.page ? result.page + 1 : 2;
+                        result.page++;
                         queryDevpost(webhook_event.sender, result);
                     }
                 } else {
@@ -91,10 +96,8 @@ const ConversationStage = {
     TECH: 2,
 };
 
-function queryDevpost(sender, convertsation) {
-    let page = convertsation.page ? convertsation.page : null;
-
-    devpost_url = buildUrl(convertsation.challenge, 0, page);
+function queryDevpost(sender, conversation) {
+    devpost_url = buildUrl(conversation.challenge, 0, conversation.page);
 
     request({
         url: devpost_url,
@@ -138,7 +141,7 @@ function queryDevpost(sender, convertsation) {
                 ]
             };
 
-            if (!page) {
+            if (conversation.page == 1) {
                 Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
             }
 
@@ -182,7 +185,7 @@ function buildUrl(message, type, page) {
 
     components.unshift(options[type ? type : 0]);
 
-    let combined = components.map(a => encodeURIComponent(a)).join('+');
+    let combined = components.join(' ');
 
     // Create the HREF
     let search_url = new URL("https://devpost.com/software/search");
@@ -191,11 +194,13 @@ function buildUrl(message, type, page) {
     search_params.set('query', combined);
     search_params.set('per_page', '4');
 
-    if (page) {
+    if (page != 1) {
         search_params.set('page', page);
     }
 
     search_url.search = search_params;
+
+    console.log(search_url.href);
 
     return search_url.href;
 }
