@@ -25,8 +25,8 @@ const Webhook = new Messenger.Webhook(config.webhook);
 const Client = new Messenger.Client(config.client);
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
-    Client.sendSenderAction(webhook_event.sender, "mark_seen");
-    Client.sendSenderAction(webhook_event.sender, "typing_on");
+    Client.sendSenderAction(webhook_event.sender, 'mark_seen');
+    Client.sendSenderAction(webhook_event.sender, 'typing_on');
 
     let collection = database.collection(mongodbCollectionName);
 
@@ -46,12 +46,12 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 
         switch (result.stage) {
             case ConversationStage.START:
-                Client.sendText(webhook_event.sender, "Do you know what kind of challenges are available?");
+                Client.sendText(webhook_event.sender, 'Do you know what kind of challenges are available?');
                 result.stage = ConversationStage.CHALLENGE;
                 break;
             case ConversationStage.CHALLENGE:
                 result.challenge = webhook_event.message.text;
-                Client.sendText(webhook_event.sender, "What skills do you have in the team?");
+                Client.sendText(webhook_event.sender, 'What skills do you have in the team?');
                 result.stage = ConversationStage.TECH;
                 break;
             case ConversationStage.TECH:
@@ -105,8 +105,8 @@ function queryDevpost(sender, conversation) {
     }, (error, response, data) => {
         if (error) {
             console.error(error);
-            Client.sendText(sender, "Sorry bro, couldn't find anything");
-            Client.sendSenderAction(sender, "typing_off");
+            Client.sendText(sender, 'Sorry bro, couldn\'t find anything');
+            Client.sendSenderAction(sender, 'typing_off');
             return;
         }
 
@@ -118,10 +118,10 @@ function queryDevpost(sender, conversation) {
                     title: software.name,
                     subtitle: software.tagline,
                     default_action: {
-                        type: "web_url",
+                        type: 'web_url',
                         url: software.url,
                         messenger_extensions: false,
-                        webview_height_ratio: "tall"
+                        webview_height_ratio: 'tall'
                     }
                 };
 
@@ -129,20 +129,20 @@ function queryDevpost(sender, conversation) {
             }
 
             let template = {
-                template_type: "list",
-                top_element_style: "compact",
+                template_type: 'list',
+                top_element_style: 'compact',
                 elements: list,
                 buttons: [
                     {
-                        type: "postback",
-                        title: "Show More",
-                        payload: "QR_SHOW_MORE"
+                        type: 'postback',
+                        title: 'Show More',
+                        payload: 'QR_SHOW_MORE',
                     }
                 ]
             };
 
             if (conversation.page == 1) {
-                Client.sendText(sender, "Here are some projects within your challenge area which utilise those skills:");
+                Client.sendText(sender, 'Here are some projects within your challenge area which utilise those skills:');
             }
 
             Client.sendTemplate(sender, template)
@@ -170,11 +170,11 @@ function queryDevpost(sender, conversation) {
                         title: 'Show me more...',
                         payload: 'QR_SHOW_MORE',
                     }
-                ], "Does this meet your requirements?")
+                ], 'Does this meet your requirements?')
             }, 2000);
         }
 
-        Client.sendSenderAction(sender, "typing_off");
+        Client.sendSenderAction(sender, 'typing_off');
     });
 }
 
@@ -188,7 +188,7 @@ function buildUrl(message, type, page) {
     let combined = components.join(' ');
 
     // Create the HREF
-    let search_url = new URL("https://devpost.com/software/search");
+    let search_url = new URL('https://devpost.com/software/search');
     let search_params = new URLSearchParams();
 
     search_params.set('query', combined);
